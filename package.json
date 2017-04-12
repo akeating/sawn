@@ -1,0 +1,28 @@
+{
+  "name": "sawn",
+  "version": "0.0.1",
+  "description": "Node spawn with promises",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "node test/runner.js"
+  },
+  "author": "Adam Keating",
+  "license": "MIT",
+  "directories": {
+    "test": "test"
+  },
+  "keywords": [
+    "node",
+    "spawn"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/akeating/sawn.git"
+  },
+  "bugs": {
+    "url": "https://github.com/akeating/sawn/issues"
+  },
+  "homepage": "https://github.com/akeating/sawn"
+}
