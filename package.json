@@ -1,6 +1,6 @@
 {
   "name": "sawn",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Node spawn with promises",
   "main": "index.js",
   "dependencies": {},
