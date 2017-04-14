@@ -1,6 +1,6 @@
 'use strict';
 
-const sawn = require('../src');
+const sawn = require('../');
 const inspect = require('util').inspect;
 
 sawn()
