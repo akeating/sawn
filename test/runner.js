@@ -4,11 +4,12 @@ const sawn = require('../');
 const inspect = require('util').inspect;
 
 sawn()
-.run({ label: 'command1', cmd: 'ls', args: ['-lah', '.'] })
-.run({ label: 'command2', cmd: 'echo', args: ['foo'] })
+.run({ cmd: 'ls', args: ['-lah', '.'] })
+.run({ cmd: 'echo', args: ['foo'] })
 .then(() => {
-  console.log('Done');
+  console.log('test/runner.js completed');
 })
 .catch(err => {
   console.log(inspect(err));
+  process.exit(1);
 });

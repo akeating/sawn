@@ -1,8 +1,6 @@
 'use strict';
 
 const { spawn, spawnSync } = require('child_process');
-const { Transform } = require('stream');
-const inspect = require('util').inspect;
 
 module.exports = Builder;
 
@@ -15,12 +13,11 @@ function Builder(env) {
 
   return api;
 
-  function run({ label, cwd, cmd, args, stream, waitFor, keepalive }) {
+  function run({ cwd, cmd, args, waitFor, keepalive }) {
     cwd = cwd || process.cwd();
     args = args || [];
-    stream = stream || new PassThroughTransform();
     const close = () => {}
-    jobList.push({ label, cwd, cmd, args, stream, waitFor, keepalive, close });
+    jobList.push({ cwd, cmd, args, waitFor, keepalive, close });
     return api;
   };
 
@@ -44,9 +41,9 @@ function Builder(env) {
       });
   }
 
-  function runAsync ({ label, cwd, cmd, args, stream, waitFor, keepalive }) {
+  function runAsync ({ cwd, cmd, args, waitFor, keepalive }) {
     const childProcess = spawn(cmd, args, {
-      stdio: [stream.stdin, stream.stdout, stream.stderr],
+      stdio: ['pipe', 'pipe', 'pipe'],
       env,
       cwd
     });
@@ -57,7 +54,7 @@ function Builder(env) {
       childProcess.on('exit', (code) => {
         exited = true;
         if (code) {
-          reject(new Error(`${label} ${cmd} exited with non-zero code`));
+          reject(new Error(`${cmd} exited with non-zero code`));
         } else {
           resolve();
         }
@@ -68,14 +65,13 @@ function Builder(env) {
       });
 
       childProcess.stdout.on('data', (chunk) => {
-        const lines = chunk.toString().trim().split('\n');
-        lines.forEach(line => {
-          console.log(`${label}: ${line.trim()}`);
-          if (waitFor && line.match(waitFor)) {
-            resolve();
-          }
-        });
+        if (waitFor && chunk.toString().match(waitFor)) {
+          resolve();
+        }
       });
+
+      childProcess.stderr.pipe(process.stderr);
+      childProcess.stdout.pipe(process.stdout);
 
       if (keepalive && !waitFor) {
         resolve();
@@ -94,14 +90,4 @@ function Builder(env) {
   function closeAll() {
     jobList.forEach((job) => job.close());
   }
-}
-
-class PassThroughTransform extends Transform {
-  constructor() {
-    super();
-  }
-  _transform(chunk, encoding, callback) {
-    this.push(chunk);
-    callback();
-  };
 }
