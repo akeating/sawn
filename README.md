@@ -10,7 +10,7 @@ npm install --save-dev sawn
 const sawn = require('sawn');
 
 sawn()
-.run({ label: 'echo-command', cmd: 'echo', args: ['foo'] })
+.run({ cmd: 'echo', args: ['foo'] })
 .then(() => {
   // console.log('Done');
 })
@@ -34,15 +34,32 @@ env.MIX_ENV = 'teste2e';
 console.log('e2e-begin');
 
 sawn(env)
-.run({ label: 'seed-database', cwd: 'apps/domain', cmd: 'mix', args: ['ecto.reset'] })
-.run({ label: 'compile-javascript', cwd: 'apps/interface', cmd: 'npm', args: ['run', 'webpack-test-e2e'] })
-.run({ label: 'start-test-server', cwd: 'apps/interface', cmd: 'mix', args: ['s'], waitFor: /Running/ })
-.run({ label: 'start-protractor', cwd: 'apps/interface', cmd: 'node_modules/.bin/protractor', args: [] })
+
+// child processes execute and resolve serially
+.run({ cwd: 'apps/domain', cmd: 'mix', args: ['ecto.reset'] })
+
+// This child process will not start until the previous one is done
+.run({ cwd: 'apps/interface', cmd: 'npm', args: ['run', 'webpack-test-e2e'] })
+
+// waitFor resolves the promise early when the given regex matches a chunk on stdout. This
+// way protractor has a server to query.
+.run({ cwd: 'apps/interface', cmd: 'mix', args: ['s'], waitFor: /Running/ })
+
+// Both the server and protractor will run together
+.run({ cwd: 'apps/interface', cmd: 'node_modules/.bin/protractor', args: [] })
+
+// The child processes are queued and then run serially (until configured otherwise) when
+// then is called, but the then returns a promise that will not resolve until all processes have ended.
 .then(() => {
+  // At this point the outstanding server (mix s) child process has been killed.
   console.log('e2e-complete');
 })
 .catch(err => {
   console.log(err);
+
+  // The user determines whether to exit the process here, which would make sense for a build script.
+  // In other use-cases, you might decide not to exit the process but handle the error in another way.
+  process.exit(1);
 });
 ```
 
@@ -57,8 +74,8 @@ const env = process.env;
 
 console.log('client-unit-begin');
 
-const karma = { label: 'karma', cwd: '.', cmd: 'node_modules/.bin/karma', args: ['start', '--single-run'] };
-const karmaWatch = { label: 'karma-watch', cwd: '.', cmd: 'node_modules/.bin/karma', args: ['start'] };
+const karma = { cwd: '.', cmd: 'node_modules/.bin/karma', args: ['start', '--single-run'] };
+const karmaWatch = { cwd: '.', cmd: 'node_modules/.bin/karma', args: ['start'] };
 
 let selection = karma;
 if (args.length && args[0] === '--watch') {
@@ -72,6 +89,7 @@ sawn(env)
 })
 .catch(err => {
   console.log(err);
+  process.exit(1);
 });
 
 ```
